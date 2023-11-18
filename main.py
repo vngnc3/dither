@@ -5,9 +5,13 @@ import svgwrite
 import os
 
 # Set input image path
-set_input_file = "image.png"
+set_input_file = "input/hadesLeveled.jpg"
 # Set image width (default is 600)
-set_width = 255
+set_width = 1920
+# Set output directory
+set_output_directory = "output"
+# Enable SVG export?
+set_svg_export = False
 
 # Read and convert image to grayscale
 def read_and_convert_image(image_path):
@@ -66,20 +70,23 @@ def save_to_png(image, output_path):
     image.save(output_path, 'PNG')
 
 # Updated dithering engine
-def dithering_engine(image_path, output_svg_path, output_png_path=None, base_width=600):
+def dithering_engine(image_path, base_width=600):
     image = read_and_convert_image(image_path)
     scaled_image = scale_image(image, base_width)
     dithered_image = atkinson_dithering(scaled_image)
-    optimized_svg(dithered_image, output_svg_path)
-    if output_png_path:
-        save_to_png(dithered_image, output_png_path)
 
-# Generate output filenames with suffix
-input_image_path = set_input_file
-base_filename, file_extension = os.path.splitext(input_image_path)
-output_suffix = f'_dither_{set_width}'
-output_png_path = f'{base_filename}{output_suffix}.png'
-output_svg_path = f'{base_filename}{output_suffix}.svg'
+    # Generate output filenames with suffix
+    base_filename, file_extension = os.path.splitext(os.path.basename(image_path))
+    output_suffix = f'_dither_{base_width}'
+    output_png_path = os.path.join(set_output_directory, f'{base_filename}{output_suffix}.png')
+    
+    # Save as PNG
+    save_to_png(dithered_image, output_png_path)
+
+    # Check if SVG export is enabled
+    if set_svg_export:
+        output_svg_path = os.path.join(set_output_directory, f'{base_filename}{output_suffix}.svg')
+        optimized_svg(dithered_image, output_svg_path)
 
 # Execute the dithering engine
-dithering_engine(input_image_path, output_svg_path, output_png_path, set_width)
+dithering_engine(set_input_file, set_width)
