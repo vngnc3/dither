@@ -3,6 +3,7 @@ from tqdm import tqdm
 import numpy as np
 import svgwrite
 import os
+import re
 
 # Set input image path
 set_input_file = "input/hadesLeveled.jpg"
@@ -12,6 +13,8 @@ set_width = 1920
 set_output_directory = "output"
 # Enable SVG export?
 set_svg_export = False
+# Image sequence?
+is_sequence = False
 
 # Read and convert image to grayscale
 def read_and_convert_image(image_path):
@@ -88,5 +91,44 @@ def dithering_engine(image_path, base_width=600):
         output_svg_path = os.path.join(set_output_directory, f'{base_filename}{output_suffix}.svg')
         optimized_svg(dithered_image, output_svg_path)
 
+# Image sequence handling
+# Find image sequence based on the input filename
+def find_image_sequence(directory, base_filename, extension, frame_length):
+    pattern = re.compile(rf"{re.escape(base_filename)}\d{{{frame_length}}}\{extension}$")
+    return [f for f in os.listdir(directory) if pattern.match(f)]
+
+# Updated dithering engine to handle sequences
+def dithering_engine(image_path, base_width=600, is_sequence=False):
+    directory, filename = os.path.split(image_path)
+    base_filename, extension = os.path.splitext(filename)
+    
+    # Process image sequences if is_sequence is True
+    if is_sequence:
+        frame_length = len(re.search(r'\d+$', base_filename).group())
+        images = find_image_sequence(directory, base_filename[:-frame_length], extension, frame_length)
+        for img in images:
+            process_image(os.path.join(directory, img), base_width)
+    else:
+        process_image(image_path, base_width)
+
+# Function to process each image
+def process_image(image_path, base_width):
+    image = read_and_convert_image(image_path)
+    scaled_image = scale_image(image, base_width)
+    dithered_image = atkinson_dithering(scaled_image)
+
+    # Generate output filenames with suffix
+    base_filename, file_extension = os.path.splitext(os.path.basename(image_path))
+    output_suffix = f'_dither_{base_width}'
+    output_png_path = os.path.join(set_output_directory, f'{base_filename}{output_suffix}.png')
+    
+    # Save as PNG
+    save_to_png(dithered_image, output_png_path)
+
+    # Check if SVG export is enabled
+    if set_svg_export:
+        output_svg_path = os.path.join(set_output_directory, f'{base_filename}{output_suffix}.svg')
+        optimized_svg(dithered_image, output_svg_path)
+
 # Execute the dithering engine
-dithering_engine(set_input_file, set_width)
+dithering_engine(set_input_file, set_width, is_sequence)
