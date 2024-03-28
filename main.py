@@ -6,9 +6,9 @@ import os
 import re
 
 # Set input image path
-set_input_file = "input/hadesLeveled.jpg"
+set_input_file = "input/typezero.png"
 # Set image width (default is 600)
-set_width = 1920
+set_width = 2048
 # Set output directory
 set_output_directory = "output"
 # Enable SVG export?
@@ -70,6 +70,10 @@ def optimized_svg(image, output_path):
 
 # Save the dithered image as a PNG
 def save_to_png(image, output_path):
+    # Check if the output directory exists, create if not
+    output_dir = os.path.dirname(output_path)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     image.save(output_path, 'PNG')
 
 # Updated dithering engine
